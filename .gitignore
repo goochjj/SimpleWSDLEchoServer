@@ -16,4 +16,5 @@ Thumbs.db
 /bin/com
 /bin/*
 /dist/
-
+/deps/
+/build/

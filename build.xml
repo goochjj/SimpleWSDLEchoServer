@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<project name="SimpleWSDLEchoServer" default="all" basedir=".">
+	<!-- Load user property definition overrides -->
+	<property file="build.properties"/>
+	<property file="${user.home}/build.properties"/>
+
+	<property environment="env" />
+	<property name="target.version" value="1.7"/>
+	<property name="debug.setting" value="off"/>
+	<property name="app.name" value="SimpleWSDLEchoServer" />
+	<property name="build.dir" value="${basedir}/build"/>
+	<property name="dist.dir" value="${basedir}/dist"/>
+
+	<property name="junit.path" value="${basedir}/deps/junit-4.12.jar" />
+	<path id="junit.classpath"><pathelement path="${junit.path}" /><pathelement path="${basedir}/deps/hamcrest-core-1.3.jar" /></path>
+	<path id="my.classpath">
+		<pathelement location="${junit.path}" />
+		<pathelement path="${basedir}/deps/hamcrest-core-1.3.jar" />
+	</path>
+
+	<target name="all" depends="clean-dist" />
+	<target name="clean-dist" depends="clean,dist" />
+
+	<target name="clean"  
+			description="Removes all temporary files and directories." >
+		<mkdir dir="${dist.dir}" />
+		<delete dir="${build.dir}"/>
+		<delete>
+			<fileset dir="${dist.dir}">
+				<include name="*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="version">
+		<exec executable="./make_version_properties.pl" />
+		<property file="version.properties" />
+		<fail unless="app.fullVersion" message="Cannot determine version of code" />
+		<echo message="Code version ${app.fullVersion}" />
+	</target>
+
+	<target name="dist" depends="package" />
+		
+	<target name="prepare" description="Prepares the build target." depends="version">
+		<tstamp>
+			<format property="DATE" pattern="yyyy-MM-dd" />
+		</tstamp>
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${basedir}/deps" />
+		<get src="https://repo.maven.apache.org/maven2/junit/junit/4.12/junit-4.12.jar" dest="${basedir}/deps/junit-4.12.jar" skipexisting="yes" />
+		<get src="https://repo.maven.apache.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar" dest="${basedir}/deps/hamcrest-core-1.3.jar" skipexisting="yes" />
+	</target>
+	
+	<target name="compile" depends="prepare"
+			description="Compiles the sources." >
+		<mkdir dir="${build.dir}/classes" />
+		<javac srcdir="src" destdir="${build.dir}/classes" debug="${debug.setting}"
+				source="${target.version}">
+			<classpath><path refid="my.classpath" /></classpath>
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile" description="Creates the jar." >
+		<copy todir="${build.dir}/classes">
+			<fileset dir="src">
+				<include name="**/*.properties"/>
+				<include name="**/*.xml"/>
+				<include name="**/*.xsd"/>
+			</fileset>
+		</copy>
+		<jar destfile="${dist.dir}/${app.name}.jar">
+			<fileset dir="${build.dir}/classes" />
+			<manifest>
+				<attribute name ="Built-By" value="${user.name}"/>
+				<attribute name ="Build-Date" value="${DATE}" />
+				<attribute name="License" value="Apache Software License v2.0" />
+				<attribute name="Implementation-Title" value="${app.name}" />
+				<attribute name="Implementation-Version" value="${app.fullVersion}" />
+				<attribute name="Implementation-Vendor" value="https://github.com/goochjj/SimpleWSDLEchoServer" />
+		   </manifest>
+		</jar>
+		<copy tofile="${dist.dir}/${app.name}-${app.fullVersion}.jar" file="${dist.dir}/${app.name}.jar"  />
+		<copy tofile="${dist.dir}/${app.name}-jar.jar" file="${dist.dir}/${app.name}.jar"  />
+	</target>
+
+	<target name="tests" depends="jar" description="Compile and run the tests." >
+		<mkdir dir="${build.dir}/test-reports" />
+		<junit haltonfailure="yes" showoutput="yes">
+			<classpath>
+				<path refid="my.classpath" />
+				<pathelement location="${dist.dir}/${app.name}.jar"/>
+				<pathelement location="${build.dir}/classes"/>
+			</classpath>
+			<formatter type="plain"/>
+			<batchtest todir="${build.dir}/test-reports">
+				<fileset dir="${build.dir}/classes">
+					<include name="**/*Test*.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="package"
+			depends="clean, compile, jar, source-jar, tests"
+			description="Creates the distribution directory tree." >
+	</target>
+
+	<target name="source-jar"> 
+		<jar destfile="${dist.dir}/${app.name}-source.jar" compress="true">
+			<fileset dir="src/" />
+			<manifest>
+				<attribute name ="Built-By" value="${user.name}"/>
+				<attribute name ="Build-Date" value="${DATE}" />
+				<attribute name ="Project-name" value="${app.name}" />
+				<attribute name ="Project-home" value="https://github.com/goochjj/SimpleWSDLEchoServer/" />
+				<attribute name ="Release" value="${release}" />
+			</manifest>
+		</jar>
+	</target>
+</project>
