@@ -1,4 +1,4 @@
-package org.goochfriend;
+package org.goochfriend.simplewsdlechoserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
